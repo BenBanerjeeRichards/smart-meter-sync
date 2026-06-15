@@ -264,7 +264,7 @@ func ReadMonthlyReadigsFromInflux(queryApi api.QueryAPI, meterType, startMonth, 
 			  |> filter(fn: (r) => r["_measurement"] == "meter_reading")
 			  |> filter(fn: (r) => r["_field"] == "cost_pence")
 			  |> filter(fn: (r) => r["type"] == "{{.UtilityType}}")
-			  |> aggregateWindow(every: 1mo, fn: sum, createEmpty: false)
+			  |> aggregateWindow(every: 1mo, fn: sum, createEmpty: false, timeSrc: "_start")
 			  |> yield(name: "monthly_sum")
 		`
 
