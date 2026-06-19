@@ -393,6 +393,17 @@ func main() {
 	)
 	failOnError(err, "Failed to declare queue")
 
+	// topic we publish to once energy has been udpated
+	// so other services know to update their state
+	// doesn't have any body for now
+	err = ch.ExchangeDeclare("energy.synced", "fanout",
+		true,  // durable
+		false, // auto-deleted
+		false, // internal
+		false, // no-wait
+		nil)   // arguments
+	failOnError(err, "Failed to declare exchange")
+
 	msgs, err := ch.Consume(
 		q.Name, // queue name
 		"",     // consumer tag
@@ -420,6 +431,20 @@ func main() {
 			if err != nil {
 				slog.Error("Failed to sync meters", "error", err)
 			}
+
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			err = ch.PublishWithContext(ctx,
+				"energy.synced", // exchange
+				"",              // routing key
+				false,           // mandatory
+				false,           // immediate
+				amqp.Publishing{
+					ContentType:  "application/json",
+					DeliveryMode: amqp.Persistent,
+					Body:         []byte{}, // Empty byte slice acts as a pure signal
+				},
+			)
 		}
 	}()
 
